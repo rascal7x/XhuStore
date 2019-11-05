@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xmlns:context="http://www.springframework.org/schema/context"
+     xmlns:tx="http://www.springframework.org/schema/tx"
+     xmlns:aop="http://www.springframework.org/schema/aop"
+     xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/tx
+       	http://www.springframework.org/schema/tx/spring-tx.xsd
+       	http://www.springframework.org/schema/aop 
+       	http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+
+<!-- —————————————————————————————————————————————————————————————————————————————————————————————————————————— -->
+
+	<!-- 配置数据源 - 使用tomcat连接池 -->
+	<bean id="dataSource" class="org.apache.tomcat.jdbc.pool.DataSource" destroy-method="close">
+		<property name="driverClassName" value="com.mysql.jdbc.Driver" /><!-- 数据库驱动 -->
+		<property name="url" value="jdbc:mysql://localhost:3306/rms?useUnicode=true&amp;characterEncoding=UTF-8" /> <!-- 连接URL -->
+		<property name="username" value="root" /> <!-- 数据库用户名 -->
+		<property name="password" value="999" /> <!-- 数据库密码 -->
+		
+		<!-- 连接池参数配置 -->
+        <property name="initialSize" value="1" /><!-- 连接器启动时创建的初始连接数。默认为 10 -->
+        <property name="maxActive" value="5" /><!-- 同时能分配的活跃连接的最大数目。默认为 100 -->
+        <property name="minIdle" value="1" /><!-- 空闲连接的最小数目。默认为 initialSize 10 -->
+        <property name="maxIdle" value="5" /><!-- 空闲连接的最大数目。默认为 maxActive 100 -->
+		<property name="testOnBorrow" value="true" /><!-- 从池中借出对象之前，是否对其进行验证。默认值为 false。如果对象验证失败，将其从池中清除，再接着去借下一个。注意：为了让 true 值生效，validationQuery参数必须为非空字符串。为了实现更高效的验证，可以采用validationInterval -->
+        <property name="validationQuery" value="select 1" /><!-- 在将池中连接返回给调用者之前，用于验证这些连接的 SQL 查询。如果指定该值，则该查询不必返回任何数据，只是不抛出SQLException 异常。默认为 null -->
+        <property name="validationInterval" value="30000" /><!-- 为避免过度验证而设定的频率时间值（以秒计）。最多以这种频率运行验证。如果连接应该进行验证，但却没能在此间隔时间内得到验证，则会重新对其进行验证。默认为30000（30 秒） -->
+	</bean>
+
+
+<!-- —————————————————————————————————————————————————————————————————————————————————————————————————————————— -->
+
+
+	<!-- 配置 hibernate 的 sessionFactory -->
+	<bean id="sessionFactory" class="org.springframework.orm.hibernate5.LocalSessionFactoryBean">
+	
+		<property name="dataSource" ref="dataSource" />  <!-- 正式上文定义的dataSource，dataSource数据源是注入给sessionFactory的,然后关联到session中,sessionFactory需要注入给DAO -->
+		
+		<property name="packagesToScan"> <!-- 实体类所在的包 对包中每个类进行注解扫描 省去逐一配置-->
+			<list><value>com.entity</value></list>
+		</property>
+		
+		<property name="hibernateProperties">  <!-- 配置Hibernate属性-->
+			<props>
+				<prop key="hibernate.show_sql">false</prop><!-- 是否打印sql语句 -->
+				<prop key="hibernate.dialect">org.hibernate.dialect.MySQLDialect</prop><!-- 数据库方言 -->
+				<prop key="hibernate.id.new_generator_mappings">false</prop><!-- hibernate主键生成器 5.0版本后默认true -->
+			</props>
+		</property>
+	</bean>
+
+
+<!-- —————————————————————————————————————————————————————————————————————————————————————————————————————————— -->
+
+
+	<!-- 配置hibernate事务管理器，其实就是保证对数据库的正确操作。 -->
+  	<bean id="transactionManager" class="org.springframework.orm.hibernate5.HibernateTransactionManager">
+    	<property name="sessionFactory" ref="sessionFactory"/>  <!-- 就是上文的sessionFactory -->
+  	</bean>
+
+	<!-- 使用注解-注册事务管理类或方法 -->
+	<tx:annotation-driven transaction-manager="transactionManager"/>
+
+
+</beans> 
